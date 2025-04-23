@@ -5,40 +5,76 @@ import java.util.*;
 
 public class PayrollCalculator {
     public static void main(String[] args) {
-//This file is in the project directory
-        String fileName = "src/main/resources/employees.csv";
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("Enter the name of the employee file to process: ");
+        String inputFileName = scanner.nextLine();
+
+        System.out.print("Enter the name of the payroll file to create: ");
+        String outputFileName = scanner.nextLine();
+
+        List<Employee> employees = new ArrayList<>();
 
         try {
-//FileReader and BufferedReader
-            FileReader fileReader = new FileReader(fileName);
+            FileReader fileReader = new FileReader(inputFileName);
             BufferedReader bufReader = new BufferedReader(fileReader);
 
             String line;
 
-//Read each line from the file
             while ((line = bufReader.readLine()) != null) {
-
                 if (line.toLowerCase().startsWith("id|")) {
                     continue;
                 }
 
-// Split and parse
                 String[] tokens = line.split("\\|");
-
                 int id = Integer.parseInt(tokens[0]);
                 String name = tokens[1];
                 double hoursWorked = Double.parseDouble(tokens[2]);
                 double payRate = Double.parseDouble(tokens[3]);
 
                 Employee emp = new Employee(id, name, hoursWorked, payRate);
-
-                System.out.printf("ID: %d | Name: %s | Gross Pay: $%.2f%n",
-                        emp.getEmployeeId(), emp.getName(), emp.getGrossPay());
+                employees.add(emp);
             }
 
-            bufReader.close();  // Step 7: Close the file
+            bufReader.close();
+
+            if (outputFileName.endsWith(".json")) {
+                writeJsonFile(outputFileName, employees);
+            } else {
+                writeCsvFile(outputFileName, employees);
+            }
+
+            System.out.println("Payroll file created successfully!");
+
         } catch (IOException e) {
-            e.printStackTrace();  // If file not found or read error
+            System.out.println("File error: " + e.getMessage());
+        }
+    }
+
+    public static void writeCsvFile(String fileName, List<Employee> employees) {
+        try (PrintWriter writer = new PrintWriter(fileName)) {
+            writer.println("id|name|gross pay");
+            for (Employee emp : employees) {
+                writer.printf("%d|%s|%.2f%n", emp.getEmployeeId(), emp.getName(), emp.getGrossPay());
+            }
+        } catch (IOException e) {
+            System.out.println("Error writing CSV: " + e.getMessage());
+        }
+    }
+
+    public static void writeJsonFile(String fileName, List<Employee> employees) {
+        try (PrintWriter writer = new PrintWriter(fileName)) {
+            writer.println("[");
+            for (int i = 0; i < employees.size(); i++) {
+                Employee emp = employees.get(i);
+                writer.printf("  { \"id\": %d, \"name\" : \"%s\", \"grossPay\" : %.2f }",
+                        emp.getEmployeeId(), emp.getName(), emp.getGrossPay());
+                if (i < employees.size() - 1) writer.println(",");
+                else writer.println();
+            }
+            writer.println("]");
+        } catch (IOException e) {
+            System.out.println("Error writing JSON: " + e.getMessage());
         }
     }
 }
